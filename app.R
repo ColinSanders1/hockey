@@ -126,36 +126,42 @@ server <- function(input, output, session) {
     goalhighlights <- game %>%
       filter(event_type == "GOAL") %>%
       distinct(event_idx, .keep_all = TRUE) %>%
+      rowwise() %>%
       mutate(
-        scoring_team = event_team,
-        goal_scorer = event_player_1_name,
-        assisters = case_when(
-          !is.na(event_player_2_name) & !is.na(event_player_3_name) ~ paste(event_player_2_name, event_player_3_name, sep = ", "),
-          !is.na(event_player_2_name) ~ event_player_2_name,
-          !is.na(event_player_3_name) ~ event_player_3_name,
-          TRUE ~ NA_character_
+        assisters = list(
+          c(
+            ifelse(event_player_2_type == "Assist", event_player_2_name, NA_character_),
+            ifelse(event_player_3_type == "Assist", event_player_3_name, NA_character_)
+          ) %>%
+            na.omit() %>%
+            paste(collapse = ", ")
         ),
-        goalie = event_goalie_name
+        assisters = ifelse(assisters == "", "None", assisters),  
+        goalie = event_goalie_name,  
+        strength = strength  
       )
     
     if (nrow(goalhighlights) > 0) {
+      
       highlights_html <- paste0(
         "<table style='width:100%; border-collapse: collapse;'>",
         "<tr>
-        <th style='border: 1px solid black; padding: 5px;'>Scoring Team</th>
-        <th style='border: 1px solid black; padding: 5px;'>Goal Scorer</th>
-        <th style='border: 1px solid black; padding: 5px;'>Assisters</th>
-        <th style='border: 1px solid black; padding: 5px;'>Goalie</th>
-        <th style='border: 1px solid black; padding: 5px;'>Highlight Clip</th>
-      </tr>",
+      <th style='border: 1px solid black; padding: 5px;'>Scoring Team</th>
+      <th style='border: 1px solid black; padding: 5px;'>Goal Scorer</th>
+      <th style='border: 1px solid black; padding: 5px;'>Assisters</th>
+      <th style='border: 1px solid black; padding: 5px;'>Goalie</th>
+      <th style='border: 1px solid black; padding: 5px;'>Strength</th>
+      <th style='border: 1px solid black; padding: 5px;'>Highlight Clip</th>
+    </tr>",
         paste0(
           apply(goalhighlights, 1, function(row) {
             paste0(
               "<tr>",
-              "<td style='border: 1px solid black; padding: 5px;'>", row["scoring_team"], "</td>",
-              "<td style='border: 1px solid black; padding: 5px;'>", row["goal_scorer"], "</td>",
-              "<td style='border: 1px solid black; padding: 5px;'>", ifelse(is.na(row["assisters"]), "None", row["assisters"]), "</td>",
+              "<td style='border: 1px solid black; padding: 5px;'>", row["event_team"], "</td>",
+              "<td style='border: 1px solid black; padding: 5px;'>", row["event_player_1_name"], "</td>",
+              "<td style='border: 1px solid black; padding: 5px;'>", row["assisters"], "</td>",
               "<td style='border: 1px solid black; padding: 5px;'>", row["goalie"], "</td>",
+              "<td style='border: 1px solid black; padding: 5px;'>", row["strength"], "</td>",
               "<td style='border: 1px solid black; padding: 5px;'><a href='", 
               row["highlightClipSharingUrl"], 
               "' target='_blank'>Watch</a></td>",
@@ -172,6 +178,7 @@ server <- function(input, output, session) {
     }
   })
   
+  
   output$xgLeaders <- renderDT({
     game <- game_data()
     if (nrow(game) == 0) {
@@ -180,19 +187,19 @@ server <- function(input, output, session) {
                        rownames = FALSE))
     }
     
-    game <- calculate_xg(game)  # Ensure this function works correctly
+    game <- calculate_xg(game)  
     if (!"xg" %in% colnames(game)) {
       stop("The column 'xg' does not exist. Ensure 'calculate_xg()' is correctly defined.")
     }
     
     xg_leaders <- game %>%
-      group_by(event_player_1_name, event_team) %>%  # Group by player and team
+      group_by(event_player_1_name, event_team) %>%  
       summarize(
-        shots = sum(event_type %in% c("SHOT", "GOAL", "MISSED_SHOT", "BLOCKED_SHOT"), na.rm = TRUE),
-        goals = sum(event_type == "GOAL", na.rm = TRUE),
-        total_xg = round(sum(xg, na.rm = TRUE), 1)
+        Shots = sum(event_type %in% c("SHOT", "GOAL", "MISSED_SHOT", "BLOCKED_SHOT"), na.rm = TRUE),
+        Goals = sum(event_type == "GOAL", na.rm = TRUE),
+        Expected_Goals = round(sum(xg, na.rm = TRUE), 1)
       ) %>%
-      arrange(desc(total_xg)) %>%
+      arrange(desc(Expected_Goals)) %>%
       head(5)
     
     datatable(
