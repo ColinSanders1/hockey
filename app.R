@@ -149,7 +149,7 @@ server <- function(input, output, session) {
         "<table style='width:100%; border-collapse: collapse;'>",
         "<tr>
       <th style='border: 1px solid black; padding: 5px;'>Period</th>
-      <th style='border: 1px solid black; padding: 5px;'>time</th>
+      <th style='border: 1px solid black; padding: 5px;'>Time</th>
       <th style='border: 1px solid black; padding: 5px;'>Scoring Team</th>
       <th style='border: 1px solid black; padding: 5px;'>Goal Scorer</th>
       <th style='border: 1px solid black; padding: 5px;'>Assisters</th>
