@@ -138,7 +138,9 @@ server <- function(input, output, session) {
         ),
         assisters = ifelse(assisters == "", "None", assisters),  
         goalie = event_goalie_name,  
-        strength = strength  
+        strength = strength,
+        period = period,
+        time = timeRemaining
       )
     
     if (nrow(goalhighlights) > 0) {
@@ -146,6 +148,8 @@ server <- function(input, output, session) {
       highlights_html <- paste0(
         "<table style='width:100%; border-collapse: collapse;'>",
         "<tr>
+      <th style='border: 1px solid black; padding: 5px;'>Period</th>
+      <th style='border: 1px solid black; padding: 5px;'>time</th>
       <th style='border: 1px solid black; padding: 5px;'>Scoring Team</th>
       <th style='border: 1px solid black; padding: 5px;'>Goal Scorer</th>
       <th style='border: 1px solid black; padding: 5px;'>Assisters</th>
@@ -157,6 +161,8 @@ server <- function(input, output, session) {
           apply(goalhighlights, 1, function(row) {
             paste0(
               "<tr>",
+              "<td style='border: 1px solid black; padding: 5px;'>", row["period"], "</td>",
+              "<td style='border: 1px solid black; padding: 5px;'>", row["timeRemaining"], "</td>",
               "<td style='border: 1px solid black; padding: 5px;'>", row["event_team"], "</td>",
               "<td style='border: 1px solid black; padding: 5px;'>", row["event_player_1_name"], "</td>",
               "<td style='border: 1px solid black; padding: 5px;'>", row["assisters"], "</td>",
